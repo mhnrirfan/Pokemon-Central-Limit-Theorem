@@ -1,0 +1,67 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+
+# Load Pokémon data from pokemon.csv
+df = pd.read_csv('/Users/mahnooriqbal/Library/Mobile Documents/com~apple~CloudDocs/GitHub - Portfolio and University Projects/Portfolio-and-University-Projects/University Modules/COMP533/pokemon.csv')
+
+# Extract the Speed column
+population_speeds = df['speed'].to_numpy()  # Convert to NumPy array for efficient calculations
+
+# Verify the data
+print(f"Number of Pokémon: {len(population_speeds)}")
+print(f"Min Speed: {population_speeds.min()}, Max Speed: {population_speeds.max()}")
+
+# Parameters
+sample_size = 8  # Size of each sample
+num_samples = 500  # Total number of samples to draw
+
+# Function to calculate sample means dynamically
+def generate_sample_means(population, sample_size, num_samples):
+    sample_means = []
+    for _ in range(num_samples):
+        sample = np.random.choice(population, size=sample_size, replace=False)  # Random sample
+        sample_means.append(np.mean(sample))  # Calculate mean of the sample
+        yield sample_means  # Return the growing list of sample means at each step
+
+# Setup for animation
+fig, ax = plt.subplots(figsize=(10, 6))
+ax.set_xlim(population_speeds.min(), population_speeds.max())  # Pokémon Speed range
+ax.set_ylim(0, 50)  # Adjusted y-limit to prevent overflows (can change as per your needs)
+ax.set_title('Building the Sampling Distribution of the Sample Mean', fontsize=14)
+ax.set_xlabel('Sample Mean Pokémon Speed', fontsize=12)
+ax.set_ylabel('Count', fontsize=12)
+
+# Animation update function
+def update(frame):
+    # Growing list of sample means (current state of sample means)
+    means = frame
+
+    # Calculate histogram counts for the current frame's sample means
+    counts, bins = np.histogram(means, bins=20, range=(population_speeds.min(), population_speeds.max()))
+
+    # Clear the previous plot and redraw the histogram for the current frame
+    ax.clear()
+    ax.set_xlim(population_speeds.min(), population_speeds.max())  # Pokémon Speed range
+    ax.set_ylim(0, 200)  # Keep static limit for y-axis (can adjust later)
+    ax.set_title(f'Building the Sampling Distribution of the Sample Mean\nSamples Taken: {len(means)}', fontsize=14)
+    ax.set_xlabel('Sample Mean Pokémon Speed', fontsize=12)
+    ax.set_ylabel('Count', fontsize=12)
+
+    # Color the bars (bits) with a colormap for a gradient effect
+    bar_color = plt.cm.viridis(np.linspace(0, 1, len(counts)))  # Using the 'viridis' colormap
+
+    # Plot the bars (bits) in color
+    ax.bar(bins[:-1], counts, width=np.diff(bins), edgecolor='k', alpha=0.7, color=bar_color)
+
+# Create the animation
+sample_means_generator = generate_sample_means(population_speeds, sample_size, num_samples)
+ani = FuncAnimation(fig, update, frames=sample_means_generator, repeat=False, interval=100, save_count=num_samples)
+
+# Save the animation as a GIF
+ani.save('sampling_distribution_colored_bits.gif', writer='pillow', fps=10)
+
+# Display the animation
+plt.show()
+
